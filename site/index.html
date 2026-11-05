@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Git Mistakes Rescue Handbook</title>
+<meta name="description" content="A beginner manual for recovering from git panic: uncommitted work, wrong branch, bad merge, staged changes, detached HEAD, force-push fears, vanished commits. Plain English, step by step.">
+<style>
+:root { --ink:#1f2430; --paper:#fdfdfb; --accent:#3b6e64; --card:#eef4f0; --line:#d9e2dd; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Georgia,'Times New Roman',serif; color:var(--ink); background:var(--paper); line-height:1.65; font-size:17px; }
+header.site, footer.site { max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem; }
+header.site h1 { margin:0; font-size:1.9rem; color:var(--accent); }
+header.site p { margin:.3rem 0 0; color:#576057; }
+main { max-width:46rem; margin:0 auto; padding:0 1.25rem 3rem; }
+h1,h2,h3,h4 { line-height:1.25; }
+h2 { color:var(--accent); margin-top:2.2rem; border-bottom:2px solid var(--line); padding-bottom:.3rem; }
+h3 { margin-top:1.6rem; }
+a { color:var(--accent); }
+a.ext::after { content:"\2197"; font-size:.8em; }
+pre { background:#2b313a; color:#e8ecf1; padding:1rem 1.2rem; border-radius:8px; overflow-x:auto; font-size:.88rem; line-height:1.5; }
+code { font-family:ui-monospace,'SF Mono',Consolas,monospace; }
+p code, li code, td code, th code, h2 code { background:var(--card); border:1px solid var(--line); border-radius:4px; padding:.08em .35em; font-size:.85em; }
+pre code { background:none; border:none; padding:0; color:inherit; font-size:1em; }
+table { border-collapse:collapse; width:100%; font-size:.92rem; margin:1.2rem 0; }
+th,td { border:1px solid var(--line); padding:.5rem .7rem; text-align:left; vertical-align:top; }
+th { background:var(--card); }
+blockquote { border-left:4px solid var(--accent); background:var(--card); margin:1.2rem 0; padding:.6rem 1rem; border-radius:0 8px 8px 0; }
+blockquote p { margin:.3rem 0; }
+input[type=checkbox] { accent-color:var(--accent); }
+nav.pagenav { display:flex; justify-content:space-between; gap:1rem; border-top:2px solid var(--line); margin-top:2.5rem; padding-top:1rem; font-size:.95rem; }
+footer.site { color:#576057; font-size:.85rem; border-top:1px solid var(--line); margin-top:2rem; }
+footer.site a { color:inherit; }
+nav.toc { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:1rem 1.4rem; margin:1.4rem 0; font-size:.95rem; }
+nav.toc ol { margin:.4rem 0; padding-left:1.2rem; }
+
+</style>
+</head>
+<body>
+<header class="site">
+<h1><a href="index.html" style="text-decoration:none;color:inherit">The Git Mistakes Rescue Handbook</a></h1>
+<p>Recover from git panic. Plain English, step by step, never condescending.</p>
+</header>
+<main>
+<h1 id="the-git-mistakes-rescue-handbook">The Git Mistakes Rescue Handbook</h1>
+<p><em>A beginner manual for recovering from git panic — by Asdale Dynamics, LLC</em></p>
+<p>Git has a reputation for being scary. It isn&#x27;t, really. It&#x27;s just a very literal diary of your project, and almost every &quot;I&#x27;ve ruined everything&quot; moment in git is reversible. Git is designed to <strong>not lose your work</strong>. The hard part is knowing which few commands get you back to safety.</p>
+<p>This handbook is written like a friend explaining it across the kitchen table: plain English, step by step, never condescending. Every chapter starts with &quot;what you&#x27;re feeling,&quot; tells you the <strong>one thing to do first</strong>, and then walks through the fix calmly.</p>
+<p><strong>The golden rule of git panic: don't delete anything, don't re-clone, and don't run anything with `--force` until you've read one chapter of this book. Your work is almost certainly still on your disk.</strong></p>
+<h2 id="how-to-use-this-book">How to use this book</h2>
+<ol><li>Find your situation in the decision table below.</li><li>Read the one-line &quot;do this first&quot; move.</li><li>Open the linked chapter, breathe, follow the steps.</li></ol>
+<p>You never need to memorize anything. Git experts don&#x27;t memorize either — they just know this table by heart.</p>
+<hr>
+<h2 id="the-decision-table-what-did-you-just-do">The decision table: &quot;what did you just do?&quot;</h2>
+<table>
+<thead><tr><th>What just happened (how it feels)</th><th>What&#x27;s really going on</th><th>Do this first</th><th>Full walkthrough</th></tr></thead>
+<tbody>
+<tr><td>&quot;I have a half-finished mess and I&#x27;m scared to commit it&quot;</td><td>Work-in-progress in your working directory</td><td><code>git add -A</code> then <code>git stash</code> — or just commit it to a branch</td><td><a href="01-uncommitted-work.html">Chapter 1 — Uncommitted Work</a></td></tr>
+<tr><td>&quot;I&#x27;m on the wrong branch and I already started editing&quot;</td><td>Uncommitted work on the wrong branch</td><td><code>git switch -c better-branch</code> (your edits come with you)</td><td><a href="02-wrong-branch.html">Chapter 2 — Wrong Branch</a></td></tr>
+<tr><td>&quot;I committed to the wrong branch&quot;</td><td>Commits sitting on the wrong branch tip</td><td><code>git branch correct-branch && git reset --hard origin/wrong-branch-name</code> — read the chapter first</td><td><a href="02-wrong-branch.html">Chapter 2 — Wrong Branch</a></td></tr>
+<tr><td>&quot;I merged and it went horribly wrong&quot;</td><td>A merge commit (or conflict mess) you regret</td><td><code>git merge --abort</code> if conflicts are open; otherwise <code>git reset --hard ORIG_HEAD</code></td><td><a href="03-bad-merge.html">Chapter 3 — Bad Merge</a></td></tr>
+<tr><td>&quot;I staged everything / staged the wrong things&quot;</td><td>Things sitting in the staging area</td><td><code>git restore --staged .</code> to unstage everything</td><td><a href="04-staged-changes.html">Chapter 4 — Staged Changes Panic</a></td></tr>
+<tr><td>&quot;It says HEAD is detached and I panicked&quot;</td><td>You&#x27;re peeking at an old commit, not on a branch</td><td><code>git switch -</code> (go back) or <code>git switch -c new-branch</code> (keep the work)</td><td><a href="05-detached-head.html">Chapter 5 — Detached HEAD</a></td></tr>
+<tr><td>&quot;I&#x27;m scared of force-pushing and breaking the team&#x27;s history&quot;</td><td>Push rewriting a shared branch</td><td>Don&#x27;t. Use <code>--force-with-lease</code> only if you must; read the chapter first</td><td><a href="06-force-push-fears.html">Chapter 6 — Force-Push Fears</a></td></tr>
+<tr><td>&quot;My commit vanished! It&#x27;s not in the log!&quot;</td><td>Probably in the reflog, and it is <em>not</em> gone</td><td><code>git reflog</code> — every rescue starts here</td><td><a href="07-vanished-commit.html">Chapter 7 — My Commit Vanished</a></td></tr>
+<tr><td>&quot;Something else / total confusion&quot;</td><td>Unknown; work is probably still safe</td><td>Run the three safety commands in Chapter 8</td><td><a href="08-safety-net.html">Chapter 8 — The Universal Safety Net</a></td></tr>
+</tbody></table>
+<hr>
+<h2 id="three-habits-that-end-90-of-future-panics">Three habits that end 90% of future panics</h2>
+<ol><li><strong>Commit early, commit ugly.</strong> A commit named &quot;wip messy draft&quot; on a</li></ol>
+<p>throwaway branch costs you nothing and saves everything. Nobody grades your commits.</p>
+<ol><li><strong>Make a "backup branch" before anything scary.</strong> <code>git branch backup-just-in-case</code></li></ol>
+<p>before you rebase, reset, or merge. It&#x27;s a bookmark pointing at where you are <em>right now</em>, and you can never lose anything the bookmark points to.</p>
+<ol><li><strong>Learn `git reflog`, not `--force`.</strong> The reflog (Chapter 7) is git&#x27;s</li></ol>
+<p>own undo button. Almost every &quot;vanished&quot; disaster is a two-command fix.</p>
+<h2 id="what-this-book-is-not">What this book is not</h2>
+<ul><li>It is not exhaustive. It covers the panics, not all 150 subcommands.</li><li>It is not medical, legal, or financial advice — and it&#x27;s not even</li></ul>
+<p>official git advice. It&#x27;s experience, explained plainly. When in doubt, make a backup branch and copy your folder somewhere safe first.</p>
+<ul><li>It never asks you to trust a command blindly. Every chapter explains</li></ul>
+<p>what the command actually does before you run it.</p>
+<p>Ready? Find your row in the table above. You&#x27;ve got this.</p><nav class="toc"><strong>Chapters</strong><ol><li><a href="01-uncommitted-work.html">Chapter 1 — Uncommitted Work Panic</a></li><li><a href="02-wrong-branch.html">Chapter 2 — Wrong Branch Panic</a></li><li><a href="03-bad-merge.html">Chapter 3 — Bad Merge Panic</a></li><li><a href="04-staged-changes.html">Chapter 4 — Staged Changes Panic</a></li><li><a href="05-detached-head.html">Chapter 5 — Detached HEAD Panic</a></li><li><a href="06-force-push-fears.html">Chapter 6 — Force-Push Fears</a></li><li><a href="07-vanished-commit.html">Chapter 7 — &quot;My Commit Vanished!&quot;</a></li><li><a href="08-safety-net.html">Chapter 8 — The Universal Safety Net</a></li><li><a href="09-pocket-card.html">Pocket Card — Panic Commands at a Glance</a></li></ol></nav>
+<nav class="pagenav"><span></span><a href="01-uncommitted-work.html">Chapter 1 — Uncommitted Work Panic &rarr;</a></nav>
+</main>
+<footer class="site">
+<p>The Git Mistakes Rescue Handbook &middot; Copyright (c) 2026 Asdale Dynamics, LLC &middot; MIT License &middot; Friendly git education; not affiliated with the git project.</p>
+</footer>
+</body>
+</html>

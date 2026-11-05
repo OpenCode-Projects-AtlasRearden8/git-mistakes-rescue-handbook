@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pocket Card — Panic Commands at a Glance</title>
+<meta name="description" content="A beginner manual for recovering from git panic: uncommitted work, wrong branch, bad merge, staged changes, detached HEAD, force-push fears, vanished commits. Plain English, step by step.">
+<style>
+:root { --ink:#1f2430; --paper:#fdfdfb; --accent:#3b6e64; --card:#eef4f0; --line:#d9e2dd; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Georgia,'Times New Roman',serif; color:var(--ink); background:var(--paper); line-height:1.65; font-size:17px; }
+header.site, footer.site { max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem; }
+header.site h1 { margin:0; font-size:1.9rem; color:var(--accent); }
+header.site p { margin:.3rem 0 0; color:#576057; }
+main { max-width:46rem; margin:0 auto; padding:0 1.25rem 3rem; }
+h1,h2,h3,h4 { line-height:1.25; }
+h2 { color:var(--accent); margin-top:2.2rem; border-bottom:2px solid var(--line); padding-bottom:.3rem; }
+h3 { margin-top:1.6rem; }
+a { color:var(--accent); }
+a.ext::after { content:"\2197"; font-size:.8em; }
+pre { background:#2b313a; color:#e8ecf1; padding:1rem 1.2rem; border-radius:8px; overflow-x:auto; font-size:.88rem; line-height:1.5; }
+code { font-family:ui-monospace,'SF Mono',Consolas,monospace; }
+p code, li code, td code, th code, h2 code { background:var(--card); border:1px solid var(--line); border-radius:4px; padding:.08em .35em; font-size:.85em; }
+pre code { background:none; border:none; padding:0; color:inherit; font-size:1em; }
+table { border-collapse:collapse; width:100%; font-size:.92rem; margin:1.2rem 0; }
+th,td { border:1px solid var(--line); padding:.5rem .7rem; text-align:left; vertical-align:top; }
+th { background:var(--card); }
+blockquote { border-left:4px solid var(--accent); background:var(--card); margin:1.2rem 0; padding:.6rem 1rem; border-radius:0 8px 8px 0; }
+blockquote p { margin:.3rem 0; }
+input[type=checkbox] { accent-color:var(--accent); }
+nav.pagenav { display:flex; justify-content:space-between; gap:1rem; border-top:2px solid var(--line); margin-top:2.5rem; padding-top:1rem; font-size:.95rem; }
+footer.site { color:#576057; font-size:.85rem; border-top:1px solid var(--line); margin-top:2rem; }
+footer.site a { color:inherit; }
+nav.toc { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:1rem 1.4rem; margin:1.4rem 0; font-size:.95rem; }
+nav.toc ol { margin:.4rem 0; padding-left:1.2rem; }
+
+</style>
+</head>
+<body>
+<header class="site">
+<h1><a href="index.html" style="text-decoration:none;color:inherit">The Git Mistakes Rescue Handbook</a></h1>
+<p>Recover from git panic. Plain English, step by step, never condescending.</p>
+</header>
+<main>
+<h1 id="pocket-card-panic-commands-at-a-glance">Pocket Card — Panic Commands at a Glance</h1>
+<p>Print this, screenshot it, glue it to your monitor. Each line is the shortest safe version of its rescue; each chapter explains it fully.</p>
+<table>
+<thead><tr><th>Panic</th><th>Calm move</th><th>Chapter</th></tr></thead>
+<tbody>
+<tr><td>Fear committing messy work</td><td><code>git add -A && git commit -m "wip"</code></td><td><a href="01-uncommitted-work.html">Ch 1</a></td></tr>
+<tr><td>Keep work, tidy directory</td><td><code>git stash</code> (then <code>git stash pop</code>)</td><td><a href="01-uncommitted-work.html">Ch 1</a></td></tr>
+<tr><td>Started editing on wrong branch</td><td><code>git switch -c right-branch</code></td><td><a href="02-wrong-branch.html">Ch 2</a></td></tr>
+<tr><td>Committed to wrong branch</td><td>bookmark, then <code>git reset --hard <old-main></code></td><td><a href="02-wrong-branch.html">Ch 2</a></td></tr>
+<tr><td>Open merge conflicts, regretting</td><td><code>git merge --abort</code></td><td><a href="03-bad-merge.html">Ch 3</a></td></tr>
+<tr><td>Merge already completed</td><td><code>git reset --hard ORIG_HEAD</code></td><td><a href="03-bad-merge.html">Ch 3</a></td></tr>
+<tr><td>Bad merge already pushed</td><td><code>git revert -m 1 <merge-id></code></td><td><a href="03-bad-merge.html">Ch 3</a></td></tr>
+<tr><td>Staged everything by accident</td><td><code>git restore --staged .</code></td><td><a href="04-staged-changes.html">Ch 4</a></td></tr>
+<tr><td>&quot;HEAD detached&quot; message</td><td><code>git switch -</code> (or <code>git switch -c keep-it</code>)</td><td><a href="05-detached-head.html">Ch 5</a></td></tr>
+<tr><td>Must touch shared history</td><td><code>git revert</code>, never force-push</td><td><a href="06-force-push-fears.html">Ch 6</a></td></tr>
+<tr><td>Force-push your own branch only</td><td><code>git push --force-with-lease</code></td><td><a href="06-force-push-fears.html">Ch 6</a></td></tr>
+<tr><td>&quot;My commit vanished&quot;</td><td><code>git reflog</code>, then bookmark + reset</td><td><a href="07-vanished-commit.html">Ch 7</a></td></tr>
+<tr><td>Total confusion</td><td><code>git status</code> + <code>git branch backup-*</code> + <code>git reflog</code></td><td><a href="08-safety-net.html">Ch 8</a></td></tr>
+<tr><td>Mid rebase/merge chaos</td><td><code>git rebase --abort</code> / <code>git merge --abort</code></td><td><a href="08-safety-net.html">Ch 8</a></td></tr>
+<tr><td>Ultimate fallback</td><td><code>cp -r myproject ../myproject-snapshot</code></td><td><a href="08-safety-net.html">Ch 8</a></td></tr>
+</tbody></table>
+<p><strong>Before anything scary:</strong> <code>git branch backup-just-in-case</code> <strong>Before believing anything is gone:</strong> <code>git reflog</code> <a href="index.html">Back to the decision table</a></p>
+<nav class="pagenav"><a href="08-safety-net.html">&larr; Chapter 8 — The Universal Safety Net</a><span></span></nav>
+</main>
+<footer class="site">
+<p>The Git Mistakes Rescue Handbook &middot; Copyright (c) 2026 Asdale Dynamics, LLC &middot; MIT License &middot; Friendly git education; not affiliated with the git project.</p>
+</footer>
+</body>
+</html>

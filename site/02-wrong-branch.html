@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 2 — Wrong Branch Panic</title>
+<meta name="description" content="A beginner manual for recovering from git panic: uncommitted work, wrong branch, bad merge, staged changes, detached HEAD, force-push fears, vanished commits. Plain English, step by step.">
+<style>
+:root { --ink:#1f2430; --paper:#fdfdfb; --accent:#3b6e64; --card:#eef4f0; --line:#d9e2dd; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Georgia,'Times New Roman',serif; color:var(--ink); background:var(--paper); line-height:1.65; font-size:17px; }
+header.site, footer.site { max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem; }
+header.site h1 { margin:0; font-size:1.9rem; color:var(--accent); }
+header.site p { margin:.3rem 0 0; color:#576057; }
+main { max-width:46rem; margin:0 auto; padding:0 1.25rem 3rem; }
+h1,h2,h3,h4 { line-height:1.25; }
+h2 { color:var(--accent); margin-top:2.2rem; border-bottom:2px solid var(--line); padding-bottom:.3rem; }
+h3 { margin-top:1.6rem; }
+a { color:var(--accent); }
+a.ext::after { content:"\2197"; font-size:.8em; }
+pre { background:#2b313a; color:#e8ecf1; padding:1rem 1.2rem; border-radius:8px; overflow-x:auto; font-size:.88rem; line-height:1.5; }
+code { font-family:ui-monospace,'SF Mono',Consolas,monospace; }
+p code, li code, td code, th code, h2 code { background:var(--card); border:1px solid var(--line); border-radius:4px; padding:.08em .35em; font-size:.85em; }
+pre code { background:none; border:none; padding:0; color:inherit; font-size:1em; }
+table { border-collapse:collapse; width:100%; font-size:.92rem; margin:1.2rem 0; }
+th,td { border:1px solid var(--line); padding:.5rem .7rem; text-align:left; vertical-align:top; }
+th { background:var(--card); }
+blockquote { border-left:4px solid var(--accent); background:var(--card); margin:1.2rem 0; padding:.6rem 1rem; border-radius:0 8px 8px 0; }
+blockquote p { margin:.3rem 0; }
+input[type=checkbox] { accent-color:var(--accent); }
+nav.pagenav { display:flex; justify-content:space-between; gap:1rem; border-top:2px solid var(--line); margin-top:2.5rem; padding-top:1rem; font-size:.95rem; }
+footer.site { color:#576057; font-size:.85rem; border-top:1px solid var(--line); margin-top:2rem; }
+footer.site a { color:inherit; }
+nav.toc { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:1rem 1.4rem; margin:1.4rem 0; font-size:.95rem; }
+nav.toc ol { margin:.4rem 0; padding-left:1.2rem; }
+
+</style>
+</head>
+<body>
+<header class="site">
+<h1><a href="index.html" style="text-decoration:none;color:inherit">The Git Mistakes Rescue Handbook</a></h1>
+<p>Recover from git panic. Plain English, step by step, never condescending.</p>
+</header>
+<main>
+<h1 id="chapter-2-wrong-branch-panic">Chapter 2 — Wrong Branch Panic</h1>
+<p><em>"I was supposed to be on `main` but I've been typing away on `feature-x` for an hour."</em> (Or the classic: <em>"I committed three times... on the wrong branch."</em>)</p>
+<p>Take a breath. Branches in git are just labels pointing at commits. Labels can be moved. Work follows you. Almost nothing here is permanent.</p>
+<h2 id="case-1-you-ve-been-editing-but-haven-t-committed-yet">Case 1: You&#x27;ve been editing, but haven&#x27;t committed yet</h2>
+<p><strong>Do this first:</strong> nothing — your edits aren&#x27;t attached to the branch at all yet. Uncommitted changes live in your working directory; the branch is just where the <em>next</em> commit will land.</p>
+<p>Switch branches and bring the work with you:</p>
+<pre><code class="lang-bash">git switch better-branch      # if the branch exists
+git switch -c better-branch   # if it doesn&#x27;t exist yet
+</code></pre>
+<p>Your uncommitted edits travel with you. If git refuses because the files would clash with the other branch&#x27;s contents, commit first (Chapter 1), then switch, then sort it out.</p>
+<h2 id="case-2-you-already-committed-to-the-wrong-branch">Case 2: You already committed to the wrong branch</h2>
+<p>Say you made commits A, B, C on <code>main</code> but they belong on a new branch.</p>
+<p><strong>Do this first: make a bookmark before anything else.</strong></p>
+<pre><code class="lang-bash">git branch backup-before-branch-surgery
+</code></pre>
+<p>Now the surgery. The plan:</p>
+<ol><li>Point the new (correct) branch at your current commits.</li><li>Move <code>main</code> back to where it should be.</li></ol>
+<pre><code class="lang-bash">git branch fix-here                      # 1: new branch at your commits
+git reset --hard origin/main             # 2: drag main back to the real main
+git switch fix-here                      # 3: stand on your rescued commits
+</code></pre>
+<p>That <code>reset --hard</code> line is the only scary-looking thing, and here&#x27;s why it&#x27;s safe in this moment: you have <em>already</em> bookmarked your commits with <code>fix-here</code> (and <code>backup-before-branch-surgery</code>). A commit that a branch name points to cannot be destroyed by moving a <em>different</em> branch.</p>
+<p>Notes:</p>
+<ul><li>If there&#x27;s no remote copy of <code>main</code> yet, instead use: <code>git branch tmp-main && git reset --hard tmp-main</code> — or simpler, note the commit id from <code>git log --oneline main</code> before you started and reset to it.</li><li>If you already <em>pushed</em> the wrong commits to a shared <code>main</code>, stop and</li></ul>
+<p>read Chapter 6 before rewriting anything. On a shared branch, prefer <code>git revert</code> (which adds an undoing commit) over <code>reset</code>.</p>
+<h2 id="case-3-you-committed-to-an-old-feature-branch-instead-of-main">Case 3: You committed to an old feature branch instead of main</h2>
+<p>Same surgery, different dressing:</p>
+<pre><code class="lang-bash">git switch main
+git cherry-pick the-commit-id       # copy the commit onto main
+git switch other-branch
+git rebase --onto other-branch~1 other-branch main  # advanced; see below
+</code></pre>
+<p>In plain words, <code>git cherry-pick <id></code> means &quot;photocopy that one commit onto the branch I&#x27;m standing on.&quot; Then remove it from the old branch later (or just leave it there until the branch itself is cleaned up — an extra copy is annoying, not dangerous).</p>
+<p>If any of that flexibility is above your comfort level today, the always-works fallback is:</p>
+<pre><code class="lang-bash">git switch main
+git merge other-branch          # bring the work over the ordinary way
+</code></pre>
+<p>Then continue on main. Not elegant; entirely acceptable.</p>
+<h2 id="the-safety-net-recap">The safety net recap</h2>
+<p>Before <em>any</em> branch surgery:</p>
+<pre><code class="lang-bash">git branch backup-just-in-case
+</code></pre>
+<p>You can delete these bookmarks later with <code>git branch -D backup-just-in-case</code> once you&#x27;re calm. Deleting a bookmark never deletes the commits it pointed at.</p>
+<p><a href="index.html">Back to the decision table</a></p>
+<nav class="pagenav"><a href="01-uncommitted-work.html">&larr; Chapter 1 — Uncommitted Work Panic</a><a href="03-bad-merge.html">Chapter 3 — Bad Merge Panic &rarr;</a></nav>
+</main>
+<footer class="site">
+<p>The Git Mistakes Rescue Handbook &middot; Copyright (c) 2026 Asdale Dynamics, LLC &middot; MIT License &middot; Friendly git education; not affiliated with the git project.</p>
+</footer>
+</body>
+</html>

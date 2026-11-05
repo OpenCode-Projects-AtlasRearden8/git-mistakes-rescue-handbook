@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 4 — Staged Changes Panic</title>
+<meta name="description" content="A beginner manual for recovering from git panic: uncommitted work, wrong branch, bad merge, staged changes, detached HEAD, force-push fears, vanished commits. Plain English, step by step.">
+<style>
+:root { --ink:#1f2430; --paper:#fdfdfb; --accent:#3b6e64; --card:#eef4f0; --line:#d9e2dd; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Georgia,'Times New Roman',serif; color:var(--ink); background:var(--paper); line-height:1.65; font-size:17px; }
+header.site, footer.site { max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem; }
+header.site h1 { margin:0; font-size:1.9rem; color:var(--accent); }
+header.site p { margin:.3rem 0 0; color:#576057; }
+main { max-width:46rem; margin:0 auto; padding:0 1.25rem 3rem; }
+h1,h2,h3,h4 { line-height:1.25; }
+h2 { color:var(--accent); margin-top:2.2rem; border-bottom:2px solid var(--line); padding-bottom:.3rem; }
+h3 { margin-top:1.6rem; }
+a { color:var(--accent); }
+a.ext::after { content:"\2197"; font-size:.8em; }
+pre { background:#2b313a; color:#e8ecf1; padding:1rem 1.2rem; border-radius:8px; overflow-x:auto; font-size:.88rem; line-height:1.5; }
+code { font-family:ui-monospace,'SF Mono',Consolas,monospace; }
+p code, li code, td code, th code, h2 code { background:var(--card); border:1px solid var(--line); border-radius:4px; padding:.08em .35em; font-size:.85em; }
+pre code { background:none; border:none; padding:0; color:inherit; font-size:1em; }
+table { border-collapse:collapse; width:100%; font-size:.92rem; margin:1.2rem 0; }
+th,td { border:1px solid var(--line); padding:.5rem .7rem; text-align:left; vertical-align:top; }
+th { background:var(--card); }
+blockquote { border-left:4px solid var(--accent); background:var(--card); margin:1.2rem 0; padding:.6rem 1rem; border-radius:0 8px 8px 0; }
+blockquote p { margin:.3rem 0; }
+input[type=checkbox] { accent-color:var(--accent); }
+nav.pagenav { display:flex; justify-content:space-between; gap:1rem; border-top:2px solid var(--line); margin-top:2.5rem; padding-top:1rem; font-size:.95rem; }
+footer.site { color:#576057; font-size:.85rem; border-top:1px solid var(--line); margin-top:2rem; }
+footer.site a { color:inherit; }
+nav.toc { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:1rem 1.4rem; margin:1.4rem 0; font-size:.95rem; }
+nav.toc ol { margin:.4rem 0; padding-left:1.2rem; }
+
+</style>
+</head>
+<body>
+<header class="site">
+<h1><a href="index.html" style="text-decoration:none;color:inherit">The Git Mistakes Rescue Handbook</a></h1>
+<p>Recover from git panic. Plain English, step by step, never condescending.</p>
+</header>
+<main>
+<h1 id="chapter-4-staged-changes-panic">Chapter 4 — Staged Changes Panic</h1>
+<p><em>"I ran some command and now everything is green in `git status` and I don't know what's about to happen if I commit."</em> (Or: <em>"I staged a file I didn't mean to — is my secret going into the commit?"</em>)</p>
+<p>First, untangle a vocabulary knot that confuses everyone:</p>
+<ul><li><strong>Working directory</strong>: the files as they are right now on your screen.</li><li><strong>Staging area (the "index")</strong>: the *photo tee you&#x27;ve posed for the next</li></ul>
+<p>commit*. It&#x27;s a place, and staging a file only puts a copy of it in that place.</p>
+<ul><li><strong>Commit</strong>: the photo actually taken.</li></ul>
+<p><strong>Staging commits nothing. Nothing leaves your machine at any stage. Staging is purely "assembling" — it is the least dangerous thing in git.</strong></p>
+<h2 id="do-this-first">Do this first</h2>
+<p>To unstage everything and go back to &quot;I&#x27;m just editing files&quot;:</p>
+<pre><code class="lang-bash">git restore --staged .
+</code></pre>
+<p>The dot means &quot;all currently staged files.&quot; After this, <code>git status</code> shows everything as &quot;not staged for commit&quot; again. Zero edits were lost — your files never moved. All that happened is the <em>photo pose</em> got relaxed.</p>
+<p>To unstage just one file:</p>
+<pre><code class="lang-bash">git restore --staged path/to/file
+</code></pre>
+<p>(On very old git you&#x27;d see <code>git reset HEAD path/to/file</code> suggested — same effect, older phrasing.)</p>
+<h2 id="i-staged-everything-by-accident">&quot;I staged everything by accident&quot;</h2>
+<p>Probably <code>git add -A</code> or <code>git add .</code> — both are fine tools, but they sweep. Either unstage what you don&#x27;t want (above), or just <em>commit in stages</em>: commit what&#x27;s there with a clear message, keep working, commit again later. Two small tidy commits beat one anxious staging session.</p>
+<h2 id="i-staged-something-i-really-don-t-want-recorded-a-secret-looking-file">&quot;I staged something I really don&#x27;t want recorded — a secret-looking file&quot;</h2>
+<p>This is the one staging panic that deserves speed, and the answer is: staged is your <em>friend</em> here, because a file that never gets committed never enters history. So:</p>
+<ol><li>Unstage it: <code>git restore --staged the-file</code></li><li>Add it to <code>.gitignore</code> so it never gets swept up again:</li></ol>
+<pre><code class="lang-bash">echo &quot;.env&quot; &gt;&gt; .gitignore
+git add .gitignore
+</code></pre>
+<ol><li>If it was already committed <em>before</em> today&#x27;s panic, the file is sitting</li></ol>
+<p>in git&#x27;s history. That&#x27;s Chapter 8 territory — see the &quot;exposed secret&quot; note there. The short version: treat the exposed value as burned, replace/rotate it, and then clean history calmly.</p>
+<h2 id="what-staging-does-not-do">What staging does NOT do</h2>
+<ul><li>It does not push anywhere. Pushing is a separate act entirely.</li><li>It does not delete your working copy. Nothing about staging removes,</li></ul>
+<p>moves, or rewrites file contents.</p>
+<ul><li>It does not follow you into <code>stash</code> or confuse merges. It&#x27;s just</li></ul>
+<p>preparation.</p>
+<h2 id="a-habit-that-dissolves-this-panic-forever">A habit that dissolves this panic forever</h2>
+<p>Use <code>git add path/to/thing</code> for <em>specific</em> files when you want to be deliberate, and <code>git add -A</code> when you truly mean &quot;all of it.&quot; That&#x27;s the entire nuance. If you ever feel your pulse rise in <code>git status</code>, remember the peace treaty: <code>git restore --staged .</code> resets the pose, never the files.</p>
+<p><a href="index.html">Back to the decision table</a></p>
+<nav class="pagenav"><a href="03-bad-merge.html">&larr; Chapter 3 — Bad Merge Panic</a><a href="05-detached-head.html">Chapter 5 — Detached HEAD Panic &rarr;</a></nav>
+</main>
+<footer class="site">
+<p>The Git Mistakes Rescue Handbook &middot; Copyright (c) 2026 Asdale Dynamics, LLC &middot; MIT License &middot; Friendly git education; not affiliated with the git project.</p>
+</footer>
+</body>
+</html>

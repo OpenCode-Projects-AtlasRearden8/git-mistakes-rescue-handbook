@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 3 — Bad Merge Panic</title>
+<meta name="description" content="A beginner manual for recovering from git panic: uncommitted work, wrong branch, bad merge, staged changes, detached HEAD, force-push fears, vanished commits. Plain English, step by step.">
+<style>
+:root { --ink:#1f2430; --paper:#fdfdfb; --accent:#3b6e64; --card:#eef4f0; --line:#d9e2dd; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Georgia,'Times New Roman',serif; color:var(--ink); background:var(--paper); line-height:1.65; font-size:17px; }
+header.site, footer.site { max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem; }
+header.site h1 { margin:0; font-size:1.9rem; color:var(--accent); }
+header.site p { margin:.3rem 0 0; color:#576057; }
+main { max-width:46rem; margin:0 auto; padding:0 1.25rem 3rem; }
+h1,h2,h3,h4 { line-height:1.25; }
+h2 { color:var(--accent); margin-top:2.2rem; border-bottom:2px solid var(--line); padding-bottom:.3rem; }
+h3 { margin-top:1.6rem; }
+a { color:var(--accent); }
+a.ext::after { content:"\2197"; font-size:.8em; }
+pre { background:#2b313a; color:#e8ecf1; padding:1rem 1.2rem; border-radius:8px; overflow-x:auto; font-size:.88rem; line-height:1.5; }
+code { font-family:ui-monospace,'SF Mono',Consolas,monospace; }
+p code, li code, td code, th code, h2 code { background:var(--card); border:1px solid var(--line); border-radius:4px; padding:.08em .35em; font-size:.85em; }
+pre code { background:none; border:none; padding:0; color:inherit; font-size:1em; }
+table { border-collapse:collapse; width:100%; font-size:.92rem; margin:1.2rem 0; }
+th,td { border:1px solid var(--line); padding:.5rem .7rem; text-align:left; vertical-align:top; }
+th { background:var(--card); }
+blockquote { border-left:4px solid var(--accent); background:var(--card); margin:1.2rem 0; padding:.6rem 1rem; border-radius:0 8px 8px 0; }
+blockquote p { margin:.3rem 0; }
+input[type=checkbox] { accent-color:var(--accent); }
+nav.pagenav { display:flex; justify-content:space-between; gap:1rem; border-top:2px solid var(--line); margin-top:2.5rem; padding-top:1rem; font-size:.95rem; }
+footer.site { color:#576057; font-size:.85rem; border-top:1px solid var(--line); margin-top:2rem; }
+footer.site a { color:inherit; }
+nav.toc { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:1rem 1.4rem; margin:1.4rem 0; font-size:.95rem; }
+nav.toc ol { margin:.4rem 0; padding-left:1.2rem; }
+
+</style>
+</head>
+<body>
+<header class="site">
+<h1><a href="index.html" style="text-decoration:none;color:inherit">The Git Mistakes Rescue Handbook</a></h1>
+<p>Recover from git panic. Plain English, step by step, never condescending.</p>
+</header>
+<main>
+<h1 id="chapter-3-bad-merge-panic">Chapter 3 — Bad Merge Panic</h1>
+<p><em>"I ran `git merge` and now there are conflict markers everywhere / the build is broken / I don't understand what happened."</em></p>
+<p>Merges are where most beginner terror lives, so let&#x27;s demystify. A merge just weaves two lines of history into one commit. It does not delete either line. Which means: every bad merge can be undone, usually with one command, depending on how far the merge got.</p>
+<h2 id="stage-0-conflicts-are-open-and-scaring-you">Stage 0: Conflicts are open and scaring you</h2>
+<p>If the merge has <em>paused</em> with conflict messages and your files now contain blocks like:</p>
+<pre><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+ours version
+=======
+their version
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; other-branch
+</code></pre>
+<p><strong>Do this first:</strong> you can simply call the whole thing off:</p>
+<pre><code class="lang-bash">git merge --abort
+</code></pre>
+<p>That is the official &quot;forget this merge, put everything back how it was before I started&quot; button. Your branch returns to exactly its previous state. Conflicts markers vanish. You lose nothing except the merge (which you were going to cancel anyway).</p>
+<p>Why conflicts happen, briefly: both branches changed the <em>same lines</em> and git refuses to guess which you meant. It&#x27;s not an error — it&#x27;s a politeness. Next time, you edit those <code><<<<<<</code> files by hand (keeping the version you want, deleting the markers) and <code>git add</code> them. But today you don&#x27;t have to.</p>
+<h2 id="stage-1-the-merge-already-completed-before-you-noticed">Stage 1: The merge already completed, before you noticed</h2>
+<p>If the merge finished and made a merge commit (git printed something like &quot;Merge made by the &#x27;ort&#x27; strategy&quot;) and <em>you haven't pushed it</em>:</p>
+<pre><code class="lang-bash">git reset --hard ORIG_HEAD
+</code></pre>
+<p><strong>What this actually does:</strong> <code>ORIG_HEAD</code> is a bookmark git saved pointing to where you were <em>before</em> the last big move (a merge, a rebase, a reset). Resetting to it rewinds your branch to that exact spot. The merged content stops being part of your branch.</p>
+<p>Before running it, glance with <code>git log --oneline --graph -10</code> that <code>ORIG_HEAD</code> is where you expect; print it with <code>git rev-parse ORIG_HEAD</code> if you want the raw id. And keep your standing rule: <code>git branch backup-before-merge</code> first, always.</p>
+<pre><code class="lang-bash">git branch backup-before-undo    # bookmark. always.
+git log --oneline --graph -10    # look around. always.
+git reset --hard ORIG_HEAD       # now undo, calmly.
+</code></pre>
+<p>If <code>ORIG_HEAD</code> isn&#x27;t what you want (you&#x27;ve done several operations since), find your &quot;before&quot; moment in <code>git reflog</code> instead — Chapter 7 explains it line by line.</p>
+<h2 id="stage-2-the-bad-merge-already-got-pushed">Stage 2: The bad merge already got pushed</h2>
+<p>Do <strong>not</strong> reset and force-push a shared branch before reading Chapter 6. The safe, boring, team-approved undo is a <em>revert</em>:</p>
+<pre><code class="lang-bash">git revert -m 1 the-merge-commit-id
+</code></pre>
+<p><code>revert</code> doesn&#x27;t rewrite history; it adds a new commit that undoes the merge, like an &quot;undo entry&quot; in the diary. <code>-m 1</code> tells git you want to keep your branch&#x27;s side (the first parent) and undo the other side. Once it&#x27;s pushed, everyone just gets a normal commit. Nobody&#x27;s day is ruined.</p>
+<p>One classic gotcha: re-merging the same branch later will <em>not</em> redo the content (git remembers it was merged). When that bites you, it&#x27;s another merge, not a crisis — and now you know to look at Chapter 7.</p>
+<h2 id="why-merges-feel-scarier-than-they-are">Why merges feel scarier than they are</h2>
+<p>Uncommitted work in your files does not vanish during a merge conflict — it just sits there until you abort or finish. And even after the most chaotic conflicted merge, the <em>commits themselves</em> on both branches are untouched. Merges weave; they don&#x27;t unravel. Every scary merge outcome above lands on either <code>merge --abort</code>, <code>reset --hard ORIG_HEAD</code>, or <code>revert -m 1</code>. That&#x27;s the whole spellbook.</p>
+<p><a href="index.html">Back to the decision table</a></p>
+<nav class="pagenav"><a href="02-wrong-branch.html">&larr; Chapter 2 — Wrong Branch Panic</a><a href="04-staged-changes.html">Chapter 4 — Staged Changes Panic &rarr;</a></nav>
+</main>
+<footer class="site">
+<p>The Git Mistakes Rescue Handbook &middot; Copyright (c) 2026 Asdale Dynamics, LLC &middot; MIT License &middot; Friendly git education; not affiliated with the git project.</p>
+</footer>
+</body>
+</html>

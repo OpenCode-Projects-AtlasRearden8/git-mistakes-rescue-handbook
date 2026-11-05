@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 7 — &quot;My Commit Vanished!&quot;</title>
+<meta name="description" content="A beginner manual for recovering from git panic: uncommitted work, wrong branch, bad merge, staged changes, detached HEAD, force-push fears, vanished commits. Plain English, step by step.">
+<style>
+:root { --ink:#1f2430; --paper:#fdfdfb; --accent:#3b6e64; --card:#eef4f0; --line:#d9e2dd; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Georgia,'Times New Roman',serif; color:var(--ink); background:var(--paper); line-height:1.65; font-size:17px; }
+header.site, footer.site { max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem; }
+header.site h1 { margin:0; font-size:1.9rem; color:var(--accent); }
+header.site p { margin:.3rem 0 0; color:#576057; }
+main { max-width:46rem; margin:0 auto; padding:0 1.25rem 3rem; }
+h1,h2,h3,h4 { line-height:1.25; }
+h2 { color:var(--accent); margin-top:2.2rem; border-bottom:2px solid var(--line); padding-bottom:.3rem; }
+h3 { margin-top:1.6rem; }
+a { color:var(--accent); }
+a.ext::after { content:"\2197"; font-size:.8em; }
+pre { background:#2b313a; color:#e8ecf1; padding:1rem 1.2rem; border-radius:8px; overflow-x:auto; font-size:.88rem; line-height:1.5; }
+code { font-family:ui-monospace,'SF Mono',Consolas,monospace; }
+p code, li code, td code, th code, h2 code { background:var(--card); border:1px solid var(--line); border-radius:4px; padding:.08em .35em; font-size:.85em; }
+pre code { background:none; border:none; padding:0; color:inherit; font-size:1em; }
+table { border-collapse:collapse; width:100%; font-size:.92rem; margin:1.2rem 0; }
+th,td { border:1px solid var(--line); padding:.5rem .7rem; text-align:left; vertical-align:top; }
+th { background:var(--card); }
+blockquote { border-left:4px solid var(--accent); background:var(--card); margin:1.2rem 0; padding:.6rem 1rem; border-radius:0 8px 8px 0; }
+blockquote p { margin:.3rem 0; }
+input[type=checkbox] { accent-color:var(--accent); }
+nav.pagenav { display:flex; justify-content:space-between; gap:1rem; border-top:2px solid var(--line); margin-top:2.5rem; padding-top:1rem; font-size:.95rem; }
+footer.site { color:#576057; font-size:.85rem; border-top:1px solid var(--line); margin-top:2rem; }
+footer.site a { color:inherit; }
+nav.toc { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:1rem 1.4rem; margin:1.4rem 0; font-size:.95rem; }
+nav.toc ol { margin:.4rem 0; padding-left:1.2rem; }
+
+</style>
+</head>
+<body>
+<header class="site">
+<h1><a href="index.html" style="text-decoration:none;color:inherit">The Git Mistakes Rescue Handbook</a></h1>
+<p>Recover from git panic. Plain English, step by step, never condescending.</p>
+</header>
+<main>
+<h1 id="chapter-7-my-commit-vanished">Chapter 7 — &quot;My Commit Vanished!&quot;</h1>
+<p><em>You ran a reset / rebase / amend / filter, and now `git log` just... doesn't show your commit. Your stomach does a slow cold roll and you wonder how long the last four hours takes to retype.</em></p>
+<p>This is the chapter that pays for the whole book, and it&#x27;s short: <strong>your commit is almost certainly still on your disk, right now.</strong> <code>git log</code> isn&#x27;t a census of every commit that exists — it only lists commits reachable from your <em>current branch</em>. A commit your branch stopped pointing at isn&#x27;t destroyed; it&#x27;s simply not being displayed. It&#x27;s a taped-over episode, not a burned film reel.</p>
+<h2 id="do-this-first-the-real-first-move-for-nearly-every-panic">Do this first (the real first move for nearly every panic)</h2>
+<pre><code class="lang-bash">git reflog
+</code></pre>
+<p>The reflog is git&#x27;s private diary of everywhere your HEAD has ever been — every commit, checkout, reset, merge, rebase landing spot — kept locally on your machine (for months by default). It is the closest thing git has to an undo button.</p>
+<p>You&#x27;ll see lines like:</p>
+<pre><code>3f2a9c1 HEAD@{0}: reset: moving to origin/main
+a8b1e77 HEAD@{1}: commit: add the tricky parser fix
+9c4d552 HEAD@{2}: commit (amend): tidy up docs
+</code></pre>
+<p>Read down the list and find the line <em>before</em> the disaster — here, the fix commit <code>a8b1e77</code> sitting at <code>HEAD@{1}</code>. Then:</p>
+<pre><code class="lang-bash">git branch rescue a8b1e77      # bookmark it (recommended first move)
+git reset --hard a8b1e77      # or: move your branch back to it
+</code></pre>
+<p>Congratulations: the &quot;vanished&quot; commit is back and your log is now <em>showing</em> it. You didn&#x27;t resurrect anything. You just pointed your branch at where it had been all along.</p>
+<p>The same trick works no matter what the words after <code>HEAD@{n}:</code> say — <code>reset</code>, <code>checkout</code>, <code>rebase</code>, <code>pull</code>, <code>amend</code>. If the position is in the reflog, your branch can point there again. For rebases gone sideways, <code>HEAD@{1}</code> is usually the pre-rebase you; for a bad pull, likewise. All roads lead to reflog.</p>
+<h2 id="i-ran-git-rebase-or-pull-rebase-and-my-commits-disappeared">&quot;I ran <code>git rebase</code> (or <code>pull --rebase</code>) and my commits disappeared&quot;</h2>
+<pre><code class="lang-bash">git reflog
+git reset --hard HEAD@{1}
+</code></pre>
+<p>Two lines. Read the reflog, confirm <code>HEAD@{1}</code> says something like <code>rebase (start): ...</code> followed by your work before it — actually, read for the <em>commit line</em> below the rebase entries, which lists where your commits were living. When in doubt, bookmark several nearby entries as separate branches and eyeball <code>git log --oneline</code> on each. Brute force, zero risk.</p>
+<h2 id="i-made-a-typo-in-a-commit-message-and-panicked">&quot;I made a typo in a commit message and panicked&quot;</h2>
+<pre><code class="lang-bash">git commit --amend -m &quot;correct message&quot;
+</code></pre>
+<p>That rewrites only the <em>latest</em> commit, which is safe before you push. If you&#x27;ve already pushed and nobody&#x27;s reviewed it yet, amend + push again is acceptable. If it&#x27;s buried under other commits or already shared: <code>git rebase -i</code> can reword it, but that&#x27;s history rewriting — on shared branches, let the typo live and read Chapter 6&#x27;s Rule 1.</p>
+<h2 id="i-amended-over-my-own-good-commit-reset-away-the-good-one">&quot;I amended over my own good commit / reset away the good one&quot;</h2>
+<p>Same door as always: <code>git reflog</code>, find the pre-disaster entry, bookmark, reset. Amend keeps the <em>old</em> commit alive in the reflog; it never vanishes either.</p>
+<h2 id="my-stash-popped-and-blew-away-other-work">&quot;My stash popped and blew away other work&quot;</h2>
+<pre><code class="lang-bash">git stash apply --index stash@{1}
+</code></pre>
+<p>or, cleaner, going forward in time: the popped stash is still a commit in the reflog — search for <code>git stash: WIP on</code> and apply it anew. If git complained &quot;Your local changes would be overwritten,&quot; your work wasn&#x27;t even touched; git refused first.</p>
+<h2 id="why-this-works-the-90-second-theory">Why this works (the 90-second theory)</h2>
+<p>Git keeps every commit as an object with a permanent id, written into your repository&#x27;s object store, until either (a) garbage collection prunes unreachable ones after their default grace period (typically weeks), or (b) someone deliberately and aggressively wipes the repo. Between &quot;the branch stopped pointing at it&quot; and &quot;pruned-ish eventually,&quot; there&#x27;s a months-long runway. Reflog is your map of that runway. Rescue is: find id → point a branch at it → done.</p>
+<p>The single habit that makes all of this automatic: <strong>run `git reflog` before you believe anything is gone.</strong> It&#x27;s the difference between &quot;retype four hours&quot; and &quot;bookmark two ids.&quot;</p>
+<p><a href="index.html">Back to the decision table</a></p>
+<nav class="pagenav"><a href="06-force-push-fears.html">&larr; Chapter 6 — Force-Push Fears</a><a href="08-safety-net.html">Chapter 8 — The Universal Safety Net &rarr;</a></nav>
+</main>
+<footer class="site">
+<p>The Git Mistakes Rescue Handbook &middot; Copyright (c) 2026 Asdale Dynamics, LLC &middot; MIT License &middot; Friendly git education; not affiliated with the git project.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 8 — The Universal Safety Net</title>
+<meta name="description" content="A beginner manual for recovering from git panic: uncommitted work, wrong branch, bad merge, staged changes, detached HEAD, force-push fears, vanished commits. Plain English, step by step.">
+<style>
+:root { --ink:#1f2430; --paper:#fdfdfb; --accent:#3b6e64; --card:#eef4f0; --line:#d9e2dd; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Georgia,'Times New Roman',serif; color:var(--ink); background:var(--paper); line-height:1.65; font-size:17px; }
+header.site, footer.site { max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem; }
+header.site h1 { margin:0; font-size:1.9rem; color:var(--accent); }
+header.site p { margin:.3rem 0 0; color:#576057; }
+main { max-width:46rem; margin:0 auto; padding:0 1.25rem 3rem; }
+h1,h2,h3,h4 { line-height:1.25; }
+h2 { color:var(--accent); margin-top:2.2rem; border-bottom:2px solid var(--line); padding-bottom:.3rem; }
+h3 { margin-top:1.6rem; }
+a { color:var(--accent); }
+a.ext::after { content:"\2197"; font-size:.8em; }
+pre { background:#2b313a; color:#e8ecf1; padding:1rem 1.2rem; border-radius:8px; overflow-x:auto; font-size:.88rem; line-height:1.5; }
+code { font-family:ui-monospace,'SF Mono',Consolas,monospace; }
+p code, li code, td code, th code, h2 code { background:var(--card); border:1px solid var(--line); border-radius:4px; padding:.08em .35em; font-size:.85em; }
+pre code { background:none; border:none; padding:0; color:inherit; font-size:1em; }
+table { border-collapse:collapse; width:100%; font-size:.92rem; margin:1.2rem 0; }
+th,td { border:1px solid var(--line); padding:.5rem .7rem; text-align:left; vertical-align:top; }
+th { background:var(--card); }
+blockquote { border-left:4px solid var(--accent); background:var(--card); margin:1.2rem 0; padding:.6rem 1rem; border-radius:0 8px 8px 0; }
+blockquote p { margin:.3rem 0; }
+input[type=checkbox] { accent-color:var(--accent); }
+nav.pagenav { display:flex; justify-content:space-between; gap:1rem; border-top:2px solid var(--line); margin-top:2.5rem; padding-top:1rem; font-size:.95rem; }
+footer.site { color:#576057; font-size:.85rem; border-top:1px solid var(--line); margin-top:2rem; }
+footer.site a { color:inherit; }
+nav.toc { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:1rem 1.4rem; margin:1.4rem 0; font-size:.95rem; }
+nav.toc ol { margin:.4rem 0; padding-left:1.2rem; }
+
+</style>
+</head>
+<body>
+<header class="site">
+<h1><a href="index.html" style="text-decoration:none;color:inherit">The Git Mistakes Rescue Handbook</a></h1>
+<p>Recover from git panic. Plain English, step by step, never condescending.</p>
+</header>
+<main>
+<h1 id="chapter-8-the-universal-safety-net">Chapter 8 — The Universal Safety Net</h1>
+<p><em>"I don't even know what I did. Something feels wrong and I'm scared."</em></p>
+<p>This is the &quot;I have no idea&quot; chapter for total confusion. No diagnosis needed. Three moves, in order. They are read-only or bookmark-only, which means they cannot make anything worse.</p>
+<h2 id="do-these-first-always-every-panic-in-this-order">Do these first — always, every panic, in this order</h2>
+<pre><code class="lang-bash">git status
+</code></pre>
+<p>Read-only. Tells you what state git thinks you&#x27;re in and names anything in progress (merge, rebase, cherry-pick...).</p>
+<pre><code class="lang-bash">git branch backup-right-now
+</code></pre>
+<p>Creates a bookmark pointing at your current position. Committing nothing, changing nothing. Whatever commits you&#x27;re standing on are now immortal-by-name.</p>
+<pre><code class="lang-bash">git reflog
+</code></pre>
+<p>The diary. Almost every &quot;lost&quot; moment ends with an entry in here. Find where you were before things went sideways.</p>
+<p>Then — and only then — decide something. When you&#x27;re calm, that&#x27;s when the other chapters apply: uncommitted chaos (Chapter 1), branch surgery (Chapter 2), merge undo (Chapter 3). All of them become easy once a bookmark points at where you stand.</p>
+<h2 id="if-a-rebase-or-merge-is-mid-flight-and-scaring-you">If a rebase or merge is mid-flight and scaring you</h2>
+<p>The sky is still up there. Abort is allowed at any pause point:</p>
+<pre><code class="lang-bash">git merge --abort
+git rebase --abort
+git cherry-pick --abort
+</code></pre>
+<p>Whichever operation <code>git status</code> names. Abort returns your branch to its pre-operation position. You lose nothing but the half-done operation.</p>
+<h2 id="if-you-touched-force-and-need-to-calm-down">If you touched <code>--force</code> and need to calm down</h2>
+<p>Read Chapter 6 immediately (mostly reassurance there), and know the two facts that de-escalate everything: (1) force-pushing only detaches the remote <em>label</em>; commits still exist locally on someone&#x27;s machine until garbage collection, and (2) <code>--force-with-lease</code> exists specifically to stop tomorrow&#x27;s version of this fear.</p>
+<h2 id="if-it-says-a-file-has-secrets-in-it">If it says a file has secrets in it</h2>
+<p>Short version: staged-but-uncommitted → unstage and you&#x27;re fully clean. Already committed → treat the secret as exposed, replace/rotate it (the value itself, not just the file), then clean history later when calm (<code>git filter-repo</code> in a spare copy, never on your only clone, never hungry). The rotation matters more than the deletion — that&#x27;s the actual security rule, and it applies to real credentials and fake examples alike.</p>
+<p>Note the spirit of this handbook: we avoid printing working credential examples at all, so nothing here can ever leak. Model the habit in your own docs: name files, never values.</p>
+<h2 id="the-nuclear-but-permanent-fallback">The nuclear-but-permanent fallback</h2>
+<p>There is one universally safe move that works even when git itself confuses you: copy the folder.</p>
+<pre><code class="lang-bash">cp -r myproject ../myproject-snapshot-$(date +%H%M)
+</code></pre>
+<p>Now there are two of your project. Git experiments can rage in one while the other sits untouched. Nothing in this handbook requires it — but knowing it exists means you&#x27;re never cornered. (Yes, this works even mid-rebase, mid-anything. Files are files.)</p>
+<h2 id="the-calm-summary">The calm summary</h2>
+<ul><li><code>git status</code>, <code>git branch backup-*</code>, <code>git reflog</code> — read-only, always</li></ul>
+<p>safe, always first.</p>
+<ul><li><code>--abort</code> flags — official off-switches, allowed anytime operations</li></ul>
+<p>pause.</p>
+<ul><li>Chapter 7&#x27;s reflog bookmark-and-reset — the universal &quot;undo my last</li></ul>
+<p>clever idea.&quot;</p>
+<ul><li>Folder copy — the zero-trust safety net that never fails.</li></ul>
+<p>You now know more about git panic than most people who&#x27;ve used git for years. The secret was never knowing all 150 subcommands. It was knowing four safe moves and that almost nothing is actually destroyed.</p>
+<p><a href="index.html">Back to the decision table</a></p>
+<nav class="pagenav"><a href="07-vanished-commit.html">&larr; Chapter 7 — &quot;My Commit Vanished!&quot;</a><a href="09-pocket-card.html">Pocket Card — Panic Commands at a Glance &rarr;</a></nav>
+</main>
+<footer class="site">
+<p>The Git Mistakes Rescue Handbook &middot; Copyright (c) 2026 Asdale Dynamics, LLC &middot; MIT License &middot; Friendly git education; not affiliated with the git project.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 6 — Force-Push Fears</title>
+<meta name="description" content="A beginner manual for recovering from git panic: uncommitted work, wrong branch, bad merge, staged changes, detached HEAD, force-push fears, vanished commits. Plain English, step by step.">
+<style>
+:root { --ink:#1f2430; --paper:#fdfdfb; --accent:#3b6e64; --card:#eef4f0; --line:#d9e2dd; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Georgia,'Times New Roman',serif; color:var(--ink); background:var(--paper); line-height:1.65; font-size:17px; }
+header.site, footer.site { max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem; }
+header.site h1 { margin:0; font-size:1.9rem; color:var(--accent); }
+header.site p { margin:.3rem 0 0; color:#576057; }
+main { max-width:46rem; margin:0 auto; padding:0 1.25rem 3rem; }
+h1,h2,h3,h4 { line-height:1.25; }
+h2 { color:var(--accent); margin-top:2.2rem; border-bottom:2px solid var(--line); padding-bottom:.3rem; }
+h3 { margin-top:1.6rem; }
+a { color:var(--accent); }
+a.ext::after { content:"\2197"; font-size:.8em; }
+pre { background:#2b313a; color:#e8ecf1; padding:1rem 1.2rem; border-radius:8px; overflow-x:auto; font-size:.88rem; line-height:1.5; }
+code { font-family:ui-monospace,'SF Mono',Consolas,monospace; }
+p code, li code, td code, th code, h2 code { background:var(--card); border:1px solid var(--line); border-radius:4px; padding:.08em .35em; font-size:.85em; }
+pre code { background:none; border:none; padding:0; color:inherit; font-size:1em; }
+table { border-collapse:collapse; width:100%; font-size:.92rem; margin:1.2rem 0; }
+th,td { border:1px solid var(--line); padding:.5rem .7rem; text-align:left; vertical-align:top; }
+th { background:var(--card); }
+blockquote { border-left:4px solid var(--accent); background:var(--card); margin:1.2rem 0; padding:.6rem 1rem; border-radius:0 8px 8px 0; }
+blockquote p { margin:.3rem 0; }
+input[type=checkbox] { accent-color:var(--accent); }
+nav.pagenav { display:flex; justify-content:space-between; gap:1rem; border-top:2px solid var(--line); margin-top:2.5rem; padding-top:1rem; font-size:.95rem; }
+footer.site { color:#576057; font-size:.85rem; border-top:1px solid var(--line); margin-top:2rem; }
+footer.site a { color:inherit; }
+nav.toc { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:1rem 1.4rem; margin:1.4rem 0; font-size:.95rem; }
+nav.toc ol { margin:.4rem 0; padding-left:1.2rem; }
+
+</style>
+</head>
+<body>
+<header class="site">
+<h1><a href="index.html" style="text-decoration:none;color:inherit">The Git Mistakes Rescue Handbook</a></h1>
+<p>Recover from git panic. Plain English, step by step, never condescending.</p>
+</header>
+<main>
+<h1 id="chapter-6-force-push-fears">Chapter 6 — Force-Push Fears</h1>
+<p><em>"I've heard force-pushing can destroy your teammates' work, and I have... feelings about running it."</em></p>
+<p>Good instincts! Out of everything in this book, this is the one command that can genuinely damage other people&#x27;s work. So let&#x27;s be honest and precise, and then give you rules you can hold onto.</p>
+<h2 id="what-a-force-push-actually-does">What a force-push actually does</h2>
+<p>Normally, <code>git push</code> refuses if the remote branch has commits you don&#x27;t have — git says &quot;you should pull first&quot; and that refusal <em>protects</em> people. <code>git push --force</code> means &quot;my local version wins; delete whatever is on the remote that I don&#x27;t have.&quot; Whatever the remote had that you didn&#x27;t is no longer pointed at by the branch. (Not instantly destroyed — Chapter 7 explains why — but invisible to your team members.)</p>
+<h2 id="the-rules-in-order-of-importance">The rules, in order of importance</h2>
+<h3 id="rule-1-never-force-push-a-branch-other-people-use">Rule 1: Never force-push a branch other people use</h3>
+<p>Main branches, shared feature branches, anything with teammates: don&#x27;t force-push there. Plain never. If history on a shared branch needs fixing (mistaken secret committed, wrong merge), the polite tool is <code>git revert</code> — it <em>adds</em> an undoing commit and rewrites nothing. Everyone&#x27;s clones keep working. That&#x27;s it. That&#x27;s the whole safe answer for shared history.</p>
+<h3 id="rule-2-force-pushing-your-own-branch-is-normal-and-fine">Rule 2: Force-pushing <em>your own</em> branch is normal and fine</h3>
+<p>If you squashed/rebased your own feature branch before opening a pull request, a force-push to <em>that</em> branch is routine. It&#x27;s your branch. Nobody else is standing on it. It doesn&#x27;t touch main, history, or anyone else&#x27;s work.</p>
+<h3 id="rule-3-if-you-must-force-push-use-force-with-lease">Rule 3: If you must force-push, use <code>--force-with-lease</code></h3>
+<pre><code class="lang-bash">git push --force-with-lease
+</code></pre>
+<p>This is the seatbelt version. Plain <code>--force</code> is &quot;override, no questions.&quot; <code>--force-with-lease</code> says: &quot;override, <strong>but only if the remote still looks like what I last saw</strong>.&quot; If a teammate pushed something you haven&#x27;t seen, the push <em>refuses</em> instead of vaporizing their new commits. Make it your habit word. There is no downside.</p>
+<h3 id="rule-4-write-hooks-can-differ-the-branch-guard-exists">Rule 4: Write hooks can differ; the branch guard exists</h3>
+<p>On hosting sites (GitHub, GitLab, etc.) you&#x27;ll sometimes hit &quot;protected branch&quot; — the server itself <em>forbids</em> force-pushes to main even if you type the wrong flag. That protection is your friend; leave it on.</p>
+<h2 id="oh-no-i-already-force-pushed-and-lost-someone-s-commits">&quot;Oh no, I already force-pushed and lost someone&#x27;s commits&quot;</h2>
+<p>Immediate triage, no blame, recover the commits:</p>
+<ol><li><strong>Ask the person, kindly.</strong> Their machine still has the original</li></ol>
+<p>commits in their local repo. <code>git push</code> from there (or open a branch) restores everything. This is the usual happy ending.</p>
+<ol><li><strong>Check the host.</strong> Most forges keep a reflog/activity log and may</li></ol>
+<p>allow restoring the branch from the web UI or show dangling commits.</p>
+<ol><li><strong>You still have the old id.</strong> If anyone saved the commit id (from a</li></ol>
+<p>terminal scrollback, a code-review email, CI logs), then on the remote clone: <code>git branch restore-branch the-old-id && git push -u origin restore-branch</code>. Chapter 7 explains why this works: commits aren&#x27;t destroyed by losing a branch name; they&#x27;re orphaned, and you can re-adopt them by id.</p>
+<h2 id="your-force-push-preflight-checklist">Your force-push preflight checklist</h2>
+<p>Before typing any push with force in it, ask:</p>
+<ul><li class="check"><input type="checkbox" disabled > Does anyone else use this branch? (If yes → revert instead.)</li><li class="check"><input type="checkbox" disabled > Did I make a bookmark first? (<code>git branch backup-before-force</code>)</li><li class="check"><input type="checkbox" disabled > Am I using <code>--force-with-lease</code>, not bare <code>--force</code>?</li><li class="check"><input type="checkbox" disabled > Do I have the old commit id written down somewhere? (Copy the</li></ul>
+<p>output of <code>git rev-parse HEAD</code> into a notes file. Thirty seconds of paranoia insurance.)</p>
+<p>Four ticks and a click. And most days, thanks to Rule 1 and Rule 3, the &quot;force-push fears&quot; chapter of your life will just be... one flag you always type out of habit, and a revert when team history needs adjusting.</p>
+<p><em>(This handbook is a friendly explainer, not official documentation of any hosting service's exact behavior — server protections vary. When in doubt on a shared repo: ask your team before rewriting anything.)</em></p>
+<p><a href="index.html">Back to the decision table</a></p>
+<nav class="pagenav"><a href="05-detached-head.html">&larr; Chapter 5 — Detached HEAD Panic</a><a href="07-vanished-commit.html">Chapter 7 — &quot;My Commit Vanished!&quot; &rarr;</a></nav>
+</main>
+<footer class="site">
+<p>The Git Mistakes Rescue Handbook &middot; Copyright (c) 2026 Asdale Dynamics, LLC &middot; MIT License &middot; Friendly git education; not affiliated with the git project.</p>
+</footer>
+</body>
+</html>

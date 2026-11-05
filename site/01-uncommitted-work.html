@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 1 — Uncommitted Work Panic</title>
+<meta name="description" content="A beginner manual for recovering from git panic: uncommitted work, wrong branch, bad merge, staged changes, detached HEAD, force-push fears, vanished commits. Plain English, step by step.">
+<style>
+:root { --ink:#1f2430; --paper:#fdfdfb; --accent:#3b6e64; --card:#eef4f0; --line:#d9e2dd; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Georgia,'Times New Roman',serif; color:var(--ink); background:var(--paper); line-height:1.65; font-size:17px; }
+header.site, footer.site { max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem; }
+header.site h1 { margin:0; font-size:1.9rem; color:var(--accent); }
+header.site p { margin:.3rem 0 0; color:#576057; }
+main { max-width:46rem; margin:0 auto; padding:0 1.25rem 3rem; }
+h1,h2,h3,h4 { line-height:1.25; }
+h2 { color:var(--accent); margin-top:2.2rem; border-bottom:2px solid var(--line); padding-bottom:.3rem; }
+h3 { margin-top:1.6rem; }
+a { color:var(--accent); }
+a.ext::after { content:"\2197"; font-size:.8em; }
+pre { background:#2b313a; color:#e8ecf1; padding:1rem 1.2rem; border-radius:8px; overflow-x:auto; font-size:.88rem; line-height:1.5; }
+code { font-family:ui-monospace,'SF Mono',Consolas,monospace; }
+p code, li code, td code, th code, h2 code { background:var(--card); border:1px solid var(--line); border-radius:4px; padding:.08em .35em; font-size:.85em; }
+pre code { background:none; border:none; padding:0; color:inherit; font-size:1em; }
+table { border-collapse:collapse; width:100%; font-size:.92rem; margin:1.2rem 0; }
+th,td { border:1px solid var(--line); padding:.5rem .7rem; text-align:left; vertical-align:top; }
+th { background:var(--card); }
+blockquote { border-left:4px solid var(--accent); background:var(--card); margin:1.2rem 0; padding:.6rem 1rem; border-radius:0 8px 8px 0; }
+blockquote p { margin:.3rem 0; }
+input[type=checkbox] { accent-color:var(--accent); }
+nav.pagenav { display:flex; justify-content:space-between; gap:1rem; border-top:2px solid var(--line); margin-top:2.5rem; padding-top:1rem; font-size:.95rem; }
+footer.site { color:#576057; font-size:.85rem; border-top:1px solid var(--line); margin-top:2rem; }
+footer.site a { color:inherit; }
+nav.toc { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:1rem 1.4rem; margin:1.4rem 0; font-size:.95rem; }
+nav.toc ol { margin:.4rem 0; padding-left:1.2rem; }
+
+</style>
+</head>
+<body>
+<header class="site">
+<h1><a href="index.html" style="text-decoration:none;color:inherit">The Git Mistakes Rescue Handbook</a></h1>
+<p>Recover from git panic. Plain English, step by step, never condescending.</p>
+</header>
+<main>
+<h1 id="chapter-1-uncommitted-work-panic">Chapter 1 — Uncommitted Work Panic</h1>
+<p><em>You have a half-finished mess in your project and you're afraid to touch anything: afraid to commit it, afraid to switch branches, afraid to close your laptop.</em></p>
+<p>Good news first: <strong>uncommitted work is the safest state to panic in.</strong> Nothing has been rewritten. Git hasn&#x27;t done anything subtle. Your edits are ordinary files sitting on your disk, right now, exactly where you left them.</p>
+<h2 id="do-this-first">Do this first</h2>
+<p>Just look. Type:</p>
+<pre><code class="lang-bash">git status
+</code></pre>
+<p>Nothing there deletes or changes anything. <code>git status</code> is a camera, not a tool. Read what it says — it literally names the sections you&#x27;re worried about: <em>Changes to be committed</em>, <em>Changes not staged for commit</em>, <em>Untracked files</em>. Those are all your files, and they&#x27;re all still yours.</p>
+<h2 id="your-three-options-all-safe">Your three options (all safe)</h2>
+<h3 id="option-a-commit-it-messy-on-purpose">Option A: Commit it, messy on purpose</h3>
+<p>A commit is a save point, not a publication. Nobody grades it.</p>
+<pre><code class="lang-bash">git add -A
+git commit -m &quot;wip: messy draft before i figure this out&quot;
+</code></pre>
+<p>You can clean it up later (squash it, reword it, or throw the whole thing away). A messy commit you delete tomorrow is infinitely better than work you lose today.</p>
+<p>Tip: if your editor ghost-wrote a giant commit message you didn&#x27;t want, you can fix it immediately with <code>git commit --amend</code> — see Chapter 7&#x27;s &quot;amend&quot; note for when that&#x27;s safe.</p>
+<h3 id="option-b-stash-it-a-couch-cushion-for-your-work">Option B: Stash it (a couch cushion for your work)</h3>
+<p><code>git stash</code> scoops up all uncommitted changes and puts them in a private pile, then tidies your working directory back to the last commit.</p>
+<pre><code class="lang-bash">git stash          # scoop it all up
+git stash list     # see the pile
+git stash pop      # put it back when you&#x27;re ready
+</code></pre>
+<p>The stash is <em>not</em> garbage-collected for a long time, so even a stash you forgot about for weeks can usually be recovered (see Chapter 7 if you popped something over other changes by mistake).</p>
+<p>One caution: <code>git stash</code> can feel like magic, and the pile is invisible. If you&#x27;re the kind of person who reads papers at the bottom of backpacks three years later, Option A (commit) will suit you better.</p>
+<h3 id="option-c-do-nothing-but-nothing-dumb">Option C: Do nothing, but nothing dumb</h3>
+<p>Uncommitted work survives: closing your editor, rebooting, even most branch switching. It does <strong>not</strong> survive <code>git reset --hard</code> or <code>git checkout -- .</code>. So while you&#x27;re deciding:</p>
+<ul><li>Don&#x27;t run anything with <code>reset</code> in it.</li><li>Don&#x27;t run anything with <code>checkout --</code> or <code>restore</code> (file mode) in it.</li><li>Make a folder copy if you want a purely non-git safety net:</li></ul>
+<p><code>cp -r myproject myproject-a-copy</code>. Crude, effective, yours.</p>
+<h2 id="but-i-deleted-files-and-now-git-status-shows-deletions">&quot;But I deleted files and now <code>git status</code> shows deletions&quot;</h2>
+<p>Deletions you haven&#x27;t committed are also just... changes. Bring files back:</p>
+<pre><code class="lang-bash">git restore path/to/deleted-file
+</code></pre>
+<p><code>git restore</code> (asked politely) simply re-copies the file from the last commit. It can&#x27;t resurrect a file that was never committed, though — which is the realest reason to commit early, commit ugly.</p>
+<h2 id="the-one-minute-habit">The one-minute habit</h2>
+<p>Before every coffee break: <code>git add -A && git commit -m "wip"</code>. Commits are free. Lost evenings are not.</p>
+<p><a href="index.html">Back to the decision table</a></p>
+<nav class="pagenav"><a href="index.html">&larr; The Git Mistakes Rescue Handbook</a><a href="02-wrong-branch.html">Chapter 2 — Wrong Branch Panic &rarr;</a></nav>
+</main>
+<footer class="site">
+<p>The Git Mistakes Rescue Handbook &middot; Copyright (c) 2026 Asdale Dynamics, LLC &middot; MIT License &middot; Friendly git education; not affiliated with the git project.</p>
+</footer>
+</body>
+</html>

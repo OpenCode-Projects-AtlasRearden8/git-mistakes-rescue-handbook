@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter 5 — Detached HEAD Panic</title>
+<meta name="description" content="A beginner manual for recovering from git panic: uncommitted work, wrong branch, bad merge, staged changes, detached HEAD, force-push fears, vanished commits. Plain English, step by step.">
+<style>
+:root { --ink:#1f2430; --paper:#fdfdfb; --accent:#3b6e64; --card:#eef4f0; --line:#d9e2dd; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Georgia,'Times New Roman',serif; color:var(--ink); background:var(--paper); line-height:1.65; font-size:17px; }
+header.site, footer.site { max-width:46rem; margin:0 auto; padding:1.5rem 1.25rem; }
+header.site h1 { margin:0; font-size:1.9rem; color:var(--accent); }
+header.site p { margin:.3rem 0 0; color:#576057; }
+main { max-width:46rem; margin:0 auto; padding:0 1.25rem 3rem; }
+h1,h2,h3,h4 { line-height:1.25; }
+h2 { color:var(--accent); margin-top:2.2rem; border-bottom:2px solid var(--line); padding-bottom:.3rem; }
+h3 { margin-top:1.6rem; }
+a { color:var(--accent); }
+a.ext::after { content:"\2197"; font-size:.8em; }
+pre { background:#2b313a; color:#e8ecf1; padding:1rem 1.2rem; border-radius:8px; overflow-x:auto; font-size:.88rem; line-height:1.5; }
+code { font-family:ui-monospace,'SF Mono',Consolas,monospace; }
+p code, li code, td code, th code, h2 code { background:var(--card); border:1px solid var(--line); border-radius:4px; padding:.08em .35em; font-size:.85em; }
+pre code { background:none; border:none; padding:0; color:inherit; font-size:1em; }
+table { border-collapse:collapse; width:100%; font-size:.92rem; margin:1.2rem 0; }
+th,td { border:1px solid var(--line); padding:.5rem .7rem; text-align:left; vertical-align:top; }
+th { background:var(--card); }
+blockquote { border-left:4px solid var(--accent); background:var(--card); margin:1.2rem 0; padding:.6rem 1rem; border-radius:0 8px 8px 0; }
+blockquote p { margin:.3rem 0; }
+input[type=checkbox] { accent-color:var(--accent); }
+nav.pagenav { display:flex; justify-content:space-between; gap:1rem; border-top:2px solid var(--line); margin-top:2.5rem; padding-top:1rem; font-size:.95rem; }
+footer.site { color:#576057; font-size:.85rem; border-top:1px solid var(--line); margin-top:2rem; }
+footer.site a { color:inherit; }
+nav.toc { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:1rem 1.4rem; margin:1.4rem 0; font-size:.95rem; }
+nav.toc ol { margin:.4rem 0; padding-left:1.2rem; }
+
+</style>
+</head>
+<body>
+<header class="site">
+<h1><a href="index.html" style="text-decoration:none;color:inherit">The Git Mistakes Rescue Handbook</a></h1>
+<p>Recover from git panic. Plain English, step by step, never condescending.</p>
+</header>
+<main>
+<h1 id="chapter-5-detached-head-panic">Chapter 5 — Detached HEAD Panic</h1>
+<p><em>"I checked out an old commit to look at something, and now git keeps saying `HEAD detached at 3f2a9c1` and I'm afraid to move."</em></p>
+<p>Deep breath. <strong>Nothing is broken.</strong> Git is telling you a simple fact: you&#x27;re standing on a commit like a platform, without a branch under your feet. Picture tags on a wall of paintings: normally you stand on a ladder with a name painted on it (a branch). Right now you&#x27;re standing directly on a painting (a commit id).</p>
+<p>You are completely safe while <em>looking</em>. You are also safe while <em>leaving</em>. The only danger zone is making commits here and then wandering off and forgetting them — and even that is recoverable (Chapter 7).</p>
+<h2 id="do-this-first">Do this first</h2>
+<p>Ask yourself one question: <strong>did I make any commits while detached?</strong></p>
+<h3 id="no-i-just-looked-around">&quot;No — I just looked around&quot;</h3>
+<p>Just walk back:</p>
+<pre><code class="lang-bash">git switch -
+</code></pre>
+<p>That means &quot;take me to whatever branch I was on before&quot; — git&#x27;s version of &quot;undo my last teleport.&quot; (<code>git switch main</code> works too if you know the branch you want.)</p>
+<h3 id="yes-i-want-the-commits">&quot;Yes — I want the commits&quot;</h3>
+<p>Two moves, both safe. If the work is worth keeping, get it a branch name <em>right now</em>, before anything else:</p>
+<pre><code class="lang-bash">git switch -c rescued-commits
+</code></pre>
+<p>That creates a branch, right here, catching your new commits. Nothing is lost; the commits now have a named ladder. You can rename the branch later: <code>git branch -m rescued-commits a-better-name</code>.</p>
+<h3 id="yes-but-i-want-to-throw-them-away">&quot;Yes — but I want to throw them away&quot;</h3>
+<p>Still make the safety bookmark first. Cheap, fast, invisible forever:</p>
+<pre><code class="lang-bash">git branch just-in-case-detached
+git switch -
+</code></pre>
+<h2 id="how-does-this-even-happen">How does this even happen?</h2>
+<p>Totally ordinary ways:</p>
+<ul><li><code>git checkout 3f2a9c1</code> or <code>git checkout v2.3</code> to peek at an old state</li></ul>
+<p>(looking at &quot;what did it look like last week?&quot; — a great use, not a crime).</p>
+<ul><li>Clicking an old commit in a GUI tool.</li><li>Checking out a tag.</li></ul>
+<p>None of these damage anything. Git&#x27;s only warning label is &quot;by the way, any commits you make here won&#x27;t belong to a branch.&quot;</p>
+<h2 id="the-one-rule-to-tattoo-somewhere">The one rule to tattoo somewhere</h2>
+<p><strong>Before leaving a detached HEAD you made commits on, run `git branch save-name`.</strong> A commit that no branch or tag points to is still in the reflog for weeks, but why rely on memory — bookmark first.</p>
+<h2 id="common-cross-panic">Common cross-panic</h2>
+<p>Sometimes people see &quot;detached HEAD&quot; right after a failed operation (a bad rebase, a submodule oddity) and cannot tell <em>which</em> commit they&#x27;re sitting on. Answers:</p>
+<pre><code class="lang-bash">git log --oneline -5      # what am I standing on?
+git status                # is anything half-done?
+</code></pre>
+<p>Then choose &quot;No — walk back&quot; or &quot;Yes — rescue&quot; above. If <code>git status</code> shows a rebase in progress, add the grace note from Chapter 8: <code>git rebase --abort</code> puts everything back.</p>
+<p>There&#x27;s no such thing as being <em>stuck</em> in detached HEAD. It&#x27;s a hallway, not a trap. Every door you try leads somewhere recoverable.</p>
+<p><a href="index.html">Back to the decision table</a></p>
+<nav class="pagenav"><a href="04-staged-changes.html">&larr; Chapter 4 — Staged Changes Panic</a><a href="06-force-push-fears.html">Chapter 6 — Force-Push Fears &rarr;</a></nav>
+</main>
+<footer class="site">
+<p>The Git Mistakes Rescue Handbook &middot; Copyright (c) 2026 Asdale Dynamics, LLC &middot; MIT License &middot; Friendly git education; not affiliated with the git project.</p>
+</footer>
+</body>
+</html>
